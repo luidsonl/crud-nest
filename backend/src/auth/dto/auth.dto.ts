@@ -1,4 +1,5 @@
 import { IsEmail, IsNotEmpty, IsString } from "class-validator";
+import { Match } from '../validators/match.validator';
 
 export class SignUpDto {
     @IsEmail()
@@ -10,7 +11,7 @@ export class SignUpDto {
     password: string;
 
     @IsString()
-    @IsNotEmpty()
+    @Match('password', { message: 'Passwords do not match' })
     confirmPassword: string;
 
     @IsString()
