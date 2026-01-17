@@ -28,3 +28,9 @@ export class SignInDto {
     @IsNotEmpty()
     password: string;
 }
+
+export class AuthResponseDto {
+    id: string;
+    email: string;
+    name: string;
+}

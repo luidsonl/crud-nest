@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SignInDto, SignUpDto } from './dto';
+import { AuthResponseDto, SignInDto, SignUpDto } from './dto';
 import * as argon from 'argon2'
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/wasm-compiler-edge';
 
@@ -18,9 +18,15 @@ export class AuthService {
                     name: dto.name,
                     password: hash,
                 },
-                select: {id: true, email: true, name: true}
             });
-            return user;
+
+            const userDto: AuthResponseDto= {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+            };
+
+            return userDto;
         } catch (error) {
             if(error instanceof PrismaClientKnownRequestError){
                 if(error.code === 'P2002'){
@@ -35,7 +41,29 @@ export class AuthService {
     }
 
     async signIn(dto: SignInDto){
-        return 'User signed in';
+        const user = await this.prismaService.user.findUnique({
+            where: {
+                email: dto.email,
+            }, select: {id: true, email: true, name: true, password: true}
+        });
+
+        if(!user){
+            throw new ForbiddenException('Credentials incorrect');
+        }
+
+        const pwMatches = await argon.verify(user.password, dto.password);
+
+        if(!pwMatches){
+            throw new ForbiddenException('Credentials incorrect');
+        }
+
+        const userDto: AuthResponseDto= {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+        };
+
+        return userDto;
     }
 
 }
