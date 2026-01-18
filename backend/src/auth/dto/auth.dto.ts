@@ -29,7 +29,7 @@ export class SignInDto {
     password: string;
 }
 
-export class AuthResponseDto {
+export class UserDTO {
     id: string;
     email: string;
     name: string;
