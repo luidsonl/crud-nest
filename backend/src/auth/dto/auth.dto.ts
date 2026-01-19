@@ -37,7 +37,7 @@ export class SignInDto {
     password: string;
 }
 
-export class UserDTO {
+export class AuthUserDTO {
     @Expose()
     @ApiProperty({ example: 1 })
     id: number;
@@ -55,11 +55,11 @@ export class SignInResponseDto {
     @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
     access_token: string;
 
-    @ApiProperty({ type: UserDTO })
-    user: UserDTO;
+    @ApiProperty({ type: AuthUserDTO })
+    user: AuthUserDTO;
 }
 
 export class SignUpResponseDto {
-    @ApiProperty({ type: UserDTO })
-    user: UserDTO;
+    @ApiProperty({ type: AuthUserDTO })
+    user: AuthUserDTO;
 }
