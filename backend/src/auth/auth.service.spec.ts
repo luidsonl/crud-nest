@@ -5,6 +5,7 @@ import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { ForbiddenException } from "@nestjs/common";
 import * as argon from "argon2";
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/wasm-compiler-edge';
 
 jest.mock('argon2', () => ({
     hash: jest.fn(),
@@ -77,18 +78,26 @@ describe("AuthService", () => {
 
             expect(result).toBeDefined();
             expect(result.email).toEqual(dto.email);
-            expect(mockPrismaService.user.create).toHaveBeenCalled();
+            expect(mockPrismaService.user.create).toHaveBeenCalledWith({
+                data: {
+                    email: dto.email,
+                    name: dto.name,
+                    password: hash,
+                }
+            });
         });
 
         it('should throw ForbiddenException if email already exists', async () => {
-            mockPrismaService.user.create.mockRejectedValue({
+            // Criamos uma instância real do erro que o Prisma lançaria
+            const prismaError = new PrismaClientKnownRequestError('Message', {
                 code: 'P2002',
-                constructor: { name: 'PrismaClientKnownRequestError' }
+                clientVersion: '7.2.0',
             });
-            // Re-evaluating the check in auth.service.ts
-            // if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002')
-            // Since we can't easily mock the instance check without the class, we might need a workaround 
-            // but let's see if our mock works or if we need to refine it.
+
+            mockPrismaService.user.create.mockRejectedValue(prismaError);
+
+            await expect(service.signUp(dto)).rejects.toThrow(ForbiddenException);
+            await expect(service.signUp(dto)).rejects.toThrow('Email already exists');
         });
     });
 

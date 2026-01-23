@@ -39,13 +39,14 @@ describe('UserController', () => {
     it('should call userService.editUser and return updated user', async () => {
       const userId = '1';
       const dto = { name: 'Updated Name' };
-      const updatedUser = { id: '1', email: 'test@example.com', name: 'Updated Name' };
+      const updatedUser = { id: '1', email: 'test@example.com', name: 'Updated Name', password: 'hash' };
       mockUserService.editUser.mockResolvedValue(updatedUser);
 
       const result = await controller.editUser(userId, dto);
 
       expect(service.editUser).toHaveBeenCalledWith(userId, dto);
       expect(result.name).toBe(dto.name);
+      expect((result as any).password).toBeUndefined();
     });
   });
 });

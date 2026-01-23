@@ -36,7 +36,7 @@ describe("AuthController", () => {
                 name: 'Test',
                 confirmPassword: 'password123'
             };
-            const user = { id: '1', email: 'test@example.com', name: 'Test' };
+            const user = { id: '1', email: 'test@example.com', name: 'Test', password: 'secret_hash' };
             mockAuthService.signUp.mockResolvedValue(user);
 
             const result = await controller.signUp(dto);
@@ -44,6 +44,7 @@ describe("AuthController", () => {
             expect(service.signUp).toHaveBeenCalledWith(dto);
             expect(result).toHaveProperty('user');
             expect(result.user.email).toBe(user.email);
+            expect((result.user as any).password).toBeUndefined();
         });
     });
 
@@ -55,7 +56,7 @@ describe("AuthController", () => {
             };
             const loginResult = {
                 access_token: 'token',
-                user: { id: '1', email: 'test@example.com', name: 'Test' }
+                user: { id: '1', email: 'test@example.com', name: 'Test', password: 'secret_hash' }
             };
             mockAuthService.signIn.mockResolvedValue(loginResult);
 
@@ -64,6 +65,7 @@ describe("AuthController", () => {
             expect(service.signIn).toHaveBeenCalledWith(dto);
             expect(result.access_token).toBe('token');
             expect(result.user.email).toBe(loginResult.user.email);
+            expect((result.user as any).password).toBeUndefined();
         });
     });
 });
