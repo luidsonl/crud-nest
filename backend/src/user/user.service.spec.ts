@@ -1,6 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
 import { PrismaService } from '../prisma/prisma.service';
+import * as argon from 'argon2';
+
+jest.mock('argon2', () => ({
+  hash: jest.fn(),
+}));
 
 describe('UserService', () => {
   let service: UserService;

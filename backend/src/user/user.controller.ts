@@ -2,7 +2,7 @@ import { Controller, Get, UseGuards, HttpStatus, Patch, Body } from '@nestjs/com
 import { ApiOperation, ApiTags, ApiResponse, ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { GetUser } from 'src/auth/decorator';
 import { jwtGuard } from 'src/auth/guard';
-import { GetMeDto, EditUserDto } from './dto';
+import { EditUserDto, UserResponseDto, UserDto } from './dto';
 import { plainToInstance } from 'class-transformer';
 import { UserService } from './user.service';
 import type { IUser } from 'src/auth/interfaces/user.interface';
@@ -19,7 +19,7 @@ export class UserController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'User profile retrieved successfully',
-    type: GetMeDto,
+    type: UserResponseDto,
   })
   @ApiUnauthorizedResponse({
     description: 'Invalid, expired, or missing token',
@@ -32,24 +32,25 @@ export class UserController {
   })
   @UseGuards(jwtGuard)
   @Get('me')
-  getMe(@GetUser() user: IUser): GetMeDto {
-    const userDto = plainToInstance(GetMeDto, user, {
+  getMe(@GetUser() user: IUser): UserResponseDto {
+    const userDto = plainToInstance(UserDto, user, {
       excludeExtraneousValues: true,
     });
-    return userDto;
+    return { user: userDto };
   }
 
   @ApiOperation({ summary: 'Update user profile' })
-  @ApiResponse({ status: HttpStatus.OK, type: GetMeDto })
+  @ApiResponse({ status: HttpStatus.OK, type: UserResponseDto })
   @UseGuards(jwtGuard)
   @Patch('edit')
   async editUser(
     @GetUser('id') userId: string,
     @Body() dto: EditUserDto,
-  ): Promise<GetMeDto> {
+  ): Promise<UserResponseDto> {
     const user = await this.userService.editUser(userId, dto);
-    return plainToInstance(GetMeDto, user, {
+    const userDto = plainToInstance(UserDto, user, {
       excludeExtraneousValues: true,
     });
+    return { user: userDto };
   }
 }

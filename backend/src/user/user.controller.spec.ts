@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import { GetMeDto } from './dto';
+import { UserDto } from './dto';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -28,15 +28,15 @@ describe('UserController', () => {
   });
 
   describe('getMe', () => {
-    it('should return the current user', () => {
+    it('should return the current user wrapped in an object', () => {
       const user = { id: '1', email: 'test@example.com', name: 'Test' };
       const result = controller.getMe(user as any);
-      expect(result.email).toBe(user.email);
+      expect(result.user.email).toBe(user.email);
     });
   });
 
   describe('editUser', () => {
-    it('should call userService.editUser and return updated user', async () => {
+    it('should call userService.editUser and return updated user wrapped in an object', async () => {
       const userId = '1';
       const dto = { name: 'Updated Name' };
       const updatedUser = { id: '1', email: 'test@example.com', name: 'Updated Name', password: 'hash' };
@@ -45,8 +45,8 @@ describe('UserController', () => {
       const result = await controller.editUser(userId, dto);
 
       expect(service.editUser).toHaveBeenCalledWith(userId, dto);
-      expect(result.name).toBe(dto.name);
-      expect((result as any).password).toBeUndefined();
+      expect(result.user.name).toBe(dto.name);
+      expect((result.user as any).password).toBeUndefined();
     });
   });
 });
