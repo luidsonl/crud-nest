@@ -45,3 +45,14 @@ export class GetMeDto {
   @Expose()
   updatedAt: Date;
 }
+
+export class EditUserDto {
+  @ApiProperty({ required: false })
+  email?: string;
+
+  @ApiProperty({ required: false })
+  name?: string;
+
+  @ApiProperty({ required: false })
+  password?: string;
+}

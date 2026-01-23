@@ -1,15 +1,17 @@
-import { Controller, Get, UseGuards, HttpStatus } from '@nestjs/common';
+import { Controller, Get, UseGuards, HttpStatus, Patch, Body } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiResponse, ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { GetUser } from 'src/auth/decorator';
 import { jwtGuard } from 'src/auth/guard';
-import { GetMeDto } from './dto';
+import { GetMeDto, EditUserDto } from './dto';
 import { plainToInstance } from 'class-transformer';
+import { UserService } from './user.service';
 import type { IUser } from 'src/auth/interfaces/user.interface';
 
 @ApiTags('Users')
 @ApiBearerAuth()
 @Controller('users')
 export class UserController {
+  constructor(private userService: UserService) { }
   @ApiOperation({
     summary: "Get current user's profile",
     description: 'Retrieves the authenticated user profile data.'
@@ -35,5 +37,19 @@ export class UserController {
       excludeExtraneousValues: true,
     });
     return userDto;
+  }
+
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({ status: HttpStatus.OK, type: GetMeDto })
+  @UseGuards(jwtGuard)
+  @Patch('edit')
+  async editUser(
+    @GetUser('id') userId: string,
+    @Body() dto: EditUserDto,
+  ): Promise<GetMeDto> {
+    const user = await this.userService.editUser(userId, dto);
+    return plainToInstance(GetMeDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 }
