@@ -2,21 +2,30 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { SignUpDto, SignInDto } from './dto';
+import { ModuleMocker, MockMetadata } from 'jest-mock';
+
+const moduleMocker = new ModuleMocker(global);
 
 describe('AuthController', () => {
   let controller: AuthController;
   let service: AuthService;
 
-  const mockAuthService = {
-    signUp: jest.fn(),
-    signIn: jest.fn(),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useValue: mockAuthService }],
-    }).compile();
+    })
+      .useMocker((token) => {
+        if (typeof token === 'function') {
+          const mockMetadata = moduleMocker.getMetadata(
+            token,
+          ) as MockMetadata<any, any>;
+          const Mock = moduleMocker.generateFromMetadata(
+            mockMetadata,
+          ) as ObjectConstructor;
+          return new Mock();
+        }
+      })
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
     service = module.get<AuthService>(AuthService);
@@ -40,7 +49,7 @@ describe('AuthController', () => {
         name: 'Test',
         password: 'secret_hash',
       };
-      mockAuthService.signUp.mockResolvedValue(user);
+      (service.signUp as jest.Mock).mockResolvedValue(user);
 
       const result = await controller.signUp(dto);
 
@@ -66,7 +75,7 @@ describe('AuthController', () => {
           password: 'secret_hash',
         },
       };
-      mockAuthService.signIn.mockResolvedValue(loginResult);
+      (service.signIn as jest.Mock).mockResolvedValue(loginResult);
 
       const result = await controller.signIn(dto);
 

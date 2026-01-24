@@ -2,20 +2,30 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { UserDto } from './dto';
+import { ModuleMocker, MockMetadata } from 'jest-mock';
+
+const moduleMocker = new ModuleMocker(global);
 
 describe('UserController', () => {
   let controller: UserController;
   let service: UserService;
 
-  const mockUserService = {
-    editUser: jest.fn(),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
-      providers: [{ provide: UserService, useValue: mockUserService }],
-    }).compile();
+    })
+      .useMocker((token) => {
+        if (typeof token === 'function') {
+          const mockMetadata = moduleMocker.getMetadata(
+            token,
+          ) as MockMetadata<any, any>;
+          const Mock = moduleMocker.generateFromMetadata(
+            mockMetadata,
+          ) as ObjectConstructor;
+          return new Mock();
+        }
+      })
+      .compile();
 
     controller = module.get<UserController>(UserController);
     service = module.get<UserService>(UserService);
@@ -43,7 +53,7 @@ describe('UserController', () => {
         name: 'Updated Name',
         password: 'hash',
       };
-      mockUserService.editUser.mockResolvedValue(updatedUser);
+      (service.editUser as jest.Mock).mockResolvedValue(updatedUser);
 
       const result = await controller.editUser(userId, dto);
 

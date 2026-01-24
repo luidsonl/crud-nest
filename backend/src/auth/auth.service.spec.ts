@@ -6,6 +6,9 @@ import { ConfigService } from '@nestjs/config';
 import { ForbiddenException } from '@nestjs/common';
 import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/wasm-compiler-edge';
+import { ModuleMocker, MockMetadata } from 'jest-mock';
+
+const moduleMocker = new ModuleMocker(global);
 
 jest.mock('argon2', () => ({
   hash: jest.fn(),
@@ -18,38 +21,39 @@ describe('AuthService', () => {
   let jwt: JwtService;
   let config: ConfigService;
 
-  const mockPrismaService = {
-    user: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-    },
-  };
-
-  const mockJwtService = {
-    signAsync: jest.fn(),
-  };
-
-  const mockConfigService = {
-    get: jest.fn((key: string) => {
-      if (key === 'JWT_SECRET') return 'test_secret';
-      return null;
-    }),
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: JwtService, useValue: mockJwtService },
-        { provide: ConfigService, useValue: mockConfigService },
-      ],
-    }).compile();
+      providers: [AuthService],
+    })
+      .useMocker((token) => {
+        if (typeof token === 'function') {
+          const mockMetadata = moduleMocker.getMetadata(
+            token,
+          ) as MockMetadata<any, any>;
+          const Mock = moduleMocker.generateFromMetadata(
+            mockMetadata,
+          ) as ObjectConstructor;
+          return new Mock();
+        }
+      })
+      .compile();
 
     service = module.get<AuthService>(AuthService);
     prisma = module.get<PrismaService>(PrismaService);
     jwt = module.get<JwtService>(JwtService);
     config = module.get<ConfigService>(ConfigService);
+
+    if (!prisma.user) {
+      (prisma as any).user = {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+      };
+    }
+
+    (config.get as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'JWT_SECRET') return 'test_secret';
+      return null;
+    });
   });
 
   it('should be defined', () => {
@@ -67,7 +71,7 @@ describe('AuthService', () => {
     it('should create a new user', async () => {
       const hash = 'hashed_password';
       (argon.hash as jest.Mock).mockResolvedValue(hash);
-      mockPrismaService.user.create.mockResolvedValue({
+      (prisma.user.create as jest.Mock).mockResolvedValue({
         id: '1',
         email: dto.email,
         name: dto.name,
@@ -78,7 +82,7 @@ describe('AuthService', () => {
 
       expect(result).toBeDefined();
       expect(result.email).toEqual(dto.email);
-      expect(mockPrismaService.user.create).toHaveBeenCalledWith({
+      expect(prisma.user.create).toHaveBeenCalledWith({
         data: {
           email: dto.email,
           name: dto.name,
@@ -94,7 +98,7 @@ describe('AuthService', () => {
         clientVersion: '7.2.0',
       });
 
-      mockPrismaService.user.create.mockRejectedValue(prismaError);
+      (prisma.user.create as jest.Mock).mockRejectedValue(prismaError);
 
       await expect(service.signUp(dto)).rejects.toThrow(ForbiddenException);
       await expect(service.signUp(dto)).rejects.toThrow('Email already exists');
@@ -114,9 +118,9 @@ describe('AuthService', () => {
         name: 'Test User',
         password: 'hashed_password',
       };
-      mockPrismaService.user.findUnique.mockResolvedValue(user);
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(user);
       (argon.verify as jest.Mock).mockResolvedValue(true);
-      mockJwtService.signAsync.mockResolvedValue('token');
+      (jwt.signAsync as jest.Mock).mockResolvedValue('token');
 
       const result = await service.signIn(dto);
 
@@ -126,7 +130,7 @@ describe('AuthService', () => {
     });
 
     it('should throw ForbiddenException on invalid email', async () => {
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.signIn(dto)).rejects.toThrow(ForbiddenException);
     });
@@ -138,7 +142,7 @@ describe('AuthService', () => {
         name: 'Test User',
         password: 'hashed_password',
       };
-      mockPrismaService.user.findUnique.mockResolvedValue(user);
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(user);
       (argon.verify as jest.Mock).mockResolvedValue(false);
 
       await expect(service.signIn(dto)).rejects.toThrow(ForbiddenException);

@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import * as argon from 'argon2';
+import { ModuleMocker, MockMetadata } from 'jest-mock';
+
+const moduleMocker = new ModuleMocker(global);
 
 jest.mock('argon2', () => ({
   hash: jest.fn(),
@@ -11,23 +14,33 @@ describe('UserService', () => {
   let service: UserService;
   let prisma: PrismaService;
 
-  const mockPrismaService = {
-    user: {
-      findUnique: jest.fn(),
-      update: jest.fn(),
-    },
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UserService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
-    }).compile();
+      providers: [UserService],
+    })
+      .useMocker((token) => {
+        if (typeof token === 'function') {
+          const mockMetadata = moduleMocker.getMetadata(
+            token,
+          ) as MockMetadata<any, any>;
+          const Mock = moduleMocker.generateFromMetadata(
+            mockMetadata,
+          ) as ObjectConstructor;
+          return new Mock();
+        }
+      })
+      .compile();
 
     service = module.get<UserService>(UserService);
     prisma = module.get<PrismaService>(PrismaService);
+
+
+    if (!prisma.user) {
+      (prisma as any).user = {
+        findUnique: jest.fn(),
+        update: jest.fn(),
+      }
+    }
   });
 
   it('should be defined', () => {
@@ -37,12 +50,12 @@ describe('UserService', () => {
   describe('findOne', () => {
     it('should return a user by id', async () => {
       const user = { id: '1', email: 'test@example.com', name: 'Test' };
-      mockPrismaService.user.findUnique.mockResolvedValue(user);
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(user);
 
       const result = await service.findOne('1');
 
       expect(result).toEqual(user);
-      expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: '1' },
       });
     });
@@ -57,7 +70,7 @@ describe('UserService', () => {
         name: 'Updated Name',
         password: 'hash',
       };
-      mockPrismaService.user.update.mockResolvedValue(updatedUser);
+      (prisma.user.update as jest.Mock).mockResolvedValue(updatedUser);
 
       const result = await service.editUser('1', dto);
 
