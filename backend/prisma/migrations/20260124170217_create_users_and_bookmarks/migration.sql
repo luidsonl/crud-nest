@@ -13,7 +13,6 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "bookmarks" (
     "id" TEXT NOT NULL,
-    "url" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
     "link" TEXT,
