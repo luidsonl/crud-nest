@@ -88,4 +88,123 @@ describe('AppController (e2e)', () => {
         });
     });
   });
+
+  describe('Bookmarks', () => {
+    let bookmarkId: string;
+    let otherAccessToken: string;
+
+    const bookmarkDto = {
+      title: 'First Bookmark',
+      description: 'Test Description',
+      link: 'https://example.com',
+    };
+
+    beforeAll(async () => {
+      // Create another user for testing ownership
+      const otherUser = {
+        email: 'other@example.com',
+        password: '123',
+        confirmPassword: '123',
+        name: 'Other User',
+      };
+
+      await request(app.getHttpServer()).post('/auth/signup').send(otherUser);
+      const res = await request(app.getHttpServer())
+        .post('/auth/signin')
+        .send({ email: otherUser.email, password: otherUser.password });
+      otherAccessToken = res.body.access_token;
+    });
+
+    describe('Create bookmark', () => {
+      it('should create a bookmark', () => {
+        return request(app.getHttpServer())
+          .post('/bookmark')
+          .set('Authorization', 'Bearer ' + accessToken)
+          .send(bookmarkDto)
+          .expect(201)
+          .expect((res) => {
+            expect(res.body.title).toBe(bookmarkDto.title);
+            bookmarkId = res.body.id;
+          });
+      });
+    });
+
+    describe('Get bookmarks', () => {
+      it('should get bookmarks for current user', () => {
+        return request(app.getHttpServer())
+          .get('/bookmark')
+          .set('Authorization', 'Bearer ' + accessToken)
+          .expect(200)
+          .expect((res) => {
+            expect(Array.isArray(res.body.data)).toBe(true);
+            expect(res.body.data.length).toBeGreaterThan(0);
+          });
+      });
+
+      it('should get bookmarks by id', () => {
+        return request(app.getHttpServer())
+          .get(`/bookmark/${bookmarkId}`)
+          .set('Authorization', 'Bearer ' + accessToken)
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.id).toBe(bookmarkId);
+          });
+      });
+
+      it('should not let other user get bookmark by id', () => {
+        return request(app.getHttpServer())
+          .get(`/bookmark/${bookmarkId}`)
+          .set('Authorization', 'Bearer ' + otherAccessToken)
+          .expect(403);
+      });
+    });
+
+    describe('Edit bookmark', () => {
+      const updateDto = {
+        title: 'Updated Title',
+      };
+
+      it('should edit bookmark', () => {
+        return request(app.getHttpServer())
+          .patch(`/bookmark/${bookmarkId}`)
+          .set('Authorization', 'Bearer ' + accessToken)
+          .send(updateDto)
+          .expect(200)
+          .expect((res) => {
+            expect(res.body.title).toBe(updateDto.title);
+          });
+      });
+
+      it('should not let other user edit bookmark', () => {
+        return request(app.getHttpServer())
+          .patch(`/bookmark/${bookmarkId}`)
+          .set('Authorization', 'Bearer ' + otherAccessToken)
+          .send(updateDto)
+          .expect(403);
+      });
+    });
+
+    describe('Delete bookmark', () => {
+      it('should not let other user delete bookmark', () => {
+        return request(app.getHttpServer())
+          .delete(`/bookmark/${bookmarkId}`)
+          .set('Authorization', 'Bearer ' + otherAccessToken)
+          .expect(403);
+      });
+
+      it('should delete bookmark', () => {
+        return request(app.getHttpServer())
+          .delete(`/bookmark/${bookmarkId}`)
+          .set('Authorization', 'Bearer ' + accessToken)
+          .expect(200);
+      });
+
+      it('should return 404 after deleting', () => {
+        return request(app.getHttpServer())
+          .get(`/bookmark/${bookmarkId}`)
+          .set('Authorization', 'Bearer ' + accessToken)
+          .expect(404);
+      });
+    });
+  });
 });
