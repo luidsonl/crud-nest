@@ -14,7 +14,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { GetUser } from 'src/auth/decorator';
-import { jwtGuard } from 'src/auth/guard';
+import { JwtGuard } from 'src/auth/guard';
 import { EditUserDto, UserResponseDto, UserDto } from './dto';
 import { plainToInstance } from 'class-transformer';
 import { UserService } from './user.service';
@@ -43,7 +43,7 @@ export class UserController {
       },
     },
   })
-  @UseGuards(jwtGuard)
+  @UseGuards(JwtGuard)
   @Get('me')
   getMe(@GetUser() user: IUser): UserResponseDto {
     const userDto = plainToInstance(UserDto, user, {
@@ -54,7 +54,7 @@ export class UserController {
 
   @ApiOperation({ summary: 'Update user profile' })
   @ApiResponse({ status: HttpStatus.OK, type: UserResponseDto })
-  @UseGuards(jwtGuard)
+  @UseGuards(JwtGuard)
   @Patch('edit')
   async editUser(
     @GetUser('id') userId: string,
