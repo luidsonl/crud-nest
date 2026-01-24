@@ -43,7 +43,7 @@ describe('UserService', () => {
 
       expect(result).toEqual(user);
       expect(mockPrismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { id: '1' }
+        where: { id: '1' },
       });
     });
   });
@@ -51,7 +51,12 @@ describe('UserService', () => {
   describe('editUser', () => {
     it('should update and return user without password', async () => {
       const dto = { name: 'Updated Name' };
-      const updatedUser = { id: '1', email: 'test@example.com', name: 'Updated Name', password: 'hash' };
+      const updatedUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Updated Name',
+        password: 'hash',
+      };
       mockPrismaService.user.update.mockResolvedValue(updatedUser);
 
       const result = await service.editUser('1', dto);

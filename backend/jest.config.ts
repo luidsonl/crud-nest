@@ -12,9 +12,7 @@ module.exports = {
     '^(.+)\\.js$': '$1',
   },
 
-  transformIgnorePatterns: [
-    'node_modules/(?!@prisma)',
-  ],
+  transformIgnorePatterns: ['node_modules/(?!@prisma)'],
 
   testEnvironment: 'node',
 };

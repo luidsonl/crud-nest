@@ -1,5 +1,18 @@
-import { Controller, Get, UseGuards, HttpStatus, Patch, Body } from '@nestjs/common';
-import { ApiOperation, ApiTags, ApiResponse, ApiBearerAuth, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  HttpStatus,
+  Patch,
+  Body,
+} from '@nestjs/common';
+import {
+  ApiOperation,
+  ApiTags,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { GetUser } from 'src/auth/decorator';
 import { jwtGuard } from 'src/auth/guard';
 import { EditUserDto, UserResponseDto, UserDto } from './dto';
@@ -11,10 +24,10 @@ import type { IUser } from 'src/auth/interfaces/user.interface';
 @ApiBearerAuth()
 @Controller('users')
 export class UserController {
-  constructor(private userService: UserService) { }
+  constructor(private userService: UserService) {}
   @ApiOperation({
     summary: "Get current user's profile",
-    description: 'Retrieves the authenticated user profile data.'
+    description: 'Retrieves the authenticated user profile data.',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -27,8 +40,8 @@ export class UserController {
       example: {
         statusCode: 401,
         message: 'Unauthorized',
-      }
-    }
+      },
+    },
   })
   @UseGuards(jwtGuard)
   @Get('me')
