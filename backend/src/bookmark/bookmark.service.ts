@@ -195,6 +195,6 @@ export class BookmarkService {
     ]);
 
     const bookmarkDtos = plainToInstance(BookmarkResponseDto, bookmarks);
-    return new BookmarkListResponseDto(bookmarkDtos, total);
+    return new BookmarkListResponseDto(bookmarkDtos, total, page, limit);
   }
 }
